@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { interval, Subscription, Observable } from 'rxjs';
+import { map, filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-home',
@@ -25,15 +26,47 @@ export class HomeComponent implements OnInit, OnDestroy {
       let count = 0;
       setInterval(() => {
         // next will emit a new value, error(), or complete()
-        // observer here knows when count increments, it observes
+        // observer here knows when count increments, it observes the observable
         observer.next(count);
+
+        if (count == 8) {
+          // completes the observable, it will come to an halt
+          observer.complete();
+        }
+        if (count > 3) {
+          // throws new error object and STOPS/CANCELS the observable, automatically, it dies
+          observer.error(new Error('Count greater than 3 !!'));
+        }
         count++;
       }, 1000);
     });
 
-    this.firstObsSubscription = customIntervalObservable.subscribe((data) => {
-      console.log(data);
-    });
+    // build a chain of pipes
+    this.firstObsSubscription = customIntervalObservable
+      // use pipe operator to filter the incoming data!
+      // data is the current emitted/subscribe value
+      .pipe(
+        // returns true/false
+        filter((data: number) => {
+          return data > 2;
+        }),
+        map((data: number) => {
+          return 'Round' + (data + 1);
+        })
+      )
+      .subscribe(
+        (data) => {
+          console.log(data);
+        },
+        (error) => {
+          console.log(error);
+          alert(error.message);
+        },
+        // 3rd handler is for the completion function
+        () => {
+          console.log('completed!');
+        }
+      );
   }
 
   // unsubscribe the observable
